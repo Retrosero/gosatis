@@ -35,6 +35,12 @@ export function CustomersPage() {
     navigate('/sales');
   };
 
+  const handlePaymentClick = (customer: typeof customers[0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCustomer(customer);
+    navigate('/payments');
+  };
+
   return (
     <div className="p-4 bg-white dark:bg-gray-900 min-h-screen">
       <div className="flex items-center justify-between mb-6">
@@ -116,7 +122,10 @@ export function CustomersPage() {
                   <Plus className="w-4 h-4" />
                   <span>Satış</span>
                 </button>
-                <button className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <button 
+                  onClick={(e) => handlePaymentClick(customer, e)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
                   <CreditCard className="w-4 h-4" />
                   <span>Tahsilat</span>
                 </button>

@@ -3,8 +3,16 @@ import { formatCurrency } from '../../lib/utils';
 
 type ReceiptPreviewProps = {
   data: {
-    customer: any;
+    id: string;
     date: string;
+    customer: {
+      id: string;
+      name: string;
+      taxNumber: string;
+      address: string;
+      phone: string;
+    };
+    type: 'tahsilat' | 'tediye';
     payments: Array<{
       type: string;
       data: any;
@@ -12,63 +20,20 @@ type ReceiptPreviewProps = {
     note: string;
   };
   onClose: () => void;
-  onComplete: () => void;
+  onPrint: () => void;
 };
 
-export function ReceiptPreview({ data, onClose, onComplete }: ReceiptPreviewProps) {
-  const handlePrint = () => {
-    const printContent = document.getElementById('receipt-content');
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Ödeme Makbuzu</title>
-          <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { font-weight: bold; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .text-sm { font-size: 0.875rem; }
-            .text-gray { color: #666; }
-            @media print {
-              body { padding: 0; margin: 0; }
-              button { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div>
-            ${printContent.innerHTML}
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            }
-          </script>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-  };
-
+export function ReceiptPreview({ data, onClose, onPrint }: ReceiptPreviewProps) {
   const total = data.payments.reduce((sum, payment) => sum + Number(payment.data.amount), 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-bold">Ödeme Makbuzu</h2>
+          <h2 className="text-lg font-bold">{data.type === 'tahsilat' ? 'Tahsilat' : 'Tediye'} Makbuzu</h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
+              onClick={onPrint}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
               <Printer className="w-5 h-5" />
@@ -96,6 +61,8 @@ export function ReceiptPreview({ data, onClose, onComplete }: ReceiptPreviewProp
               <p className="font-medium">
                 {new Date(data.date).toLocaleDateString('tr-TR')}
               </p>
+              <p className="text-sm text-gray-500 mt-2">Makbuz No</p>
+              <p className="font-medium">{data.id}</p>
             </div>
           </div>
 
@@ -103,6 +70,7 @@ export function ReceiptPreview({ data, onClose, onComplete }: ReceiptPreviewProp
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="text-left py-2">Ödeme Tipi</th>
+                <th className="text-left py-2">Detay</th>
                 <th className="text-right py-2">Tutar</th>
               </tr>
             </thead>
@@ -110,13 +78,30 @@ export function ReceiptPreview({ data, onClose, onComplete }: ReceiptPreviewProp
               {data.payments.map((payment, index) => (
                 <tr key={index} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="py-2 capitalize">{payment.type}</td>
+                  <td className="py-2">
+                    {payment.type === 'cek' && (
+                      <span>
+                        {payment.data.bank} - {payment.data.checkNumber} - 
+                        Vade: {new Date(payment.data.dueDate).toLocaleDateString('tr-TR')}
+                      </span>
+                    )}
+                    {payment.type === 'senet' && (
+                      <span>
+                        {payment.data.debtorName} - {payment.data.bondNumber} - 
+                        Vade: {new Date(payment.data.dueDate).toLocaleDateString('tr-TR')}
+                      </span>
+                    )}
+                    {payment.type === 'krediKarti' && (
+                      <span>{payment.data.bank}</span>
+                    )}
+                  </td>
                   <td className="text-right">{formatCurrency(Number(payment.data.amount))}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="font-bold">
-                <td className="py-2">Toplam</td>
+                <td colSpan={2} className="py-2 text-right">Toplam</td>
                 <td className="text-right">{formatCurrency(total)}</td>
               </tr>
             </tfoot>
@@ -128,15 +113,6 @@ export function ReceiptPreview({ data, onClose, onComplete }: ReceiptPreviewProp
               <p className="text-sm text-gray-500">{data.note}</p>
             </div>
           )}
-        </div>
-
-        <div className="flex justify-end gap-4 p-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={onComplete}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          >
-            Tamamla
-          </button>
         </div>
       </div>
     </div>

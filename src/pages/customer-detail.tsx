@@ -5,6 +5,8 @@ import { customers } from '../data/customers';
 import { useTransactions } from '../hooks/use-transactions';
 import { formatCurrency } from '../lib/utils';
 import { Search } from 'lucide-react';
+import { TransactionPreview } from '../components/daily-report/transaction-preview';
+import { OrderPreview } from '../components/orders/order-preview';
 
 export function CustomerDetailPage() {
   const { id } = useParams();
@@ -12,6 +14,8 @@ export function CustomerDetailPage() {
   const { transactions } = useTransactions();
   const [activeTab, setActiveTab] = useState<'transactions' | 'orders' | 'products'>('transactions');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const customer = customers.find(c => c.id === id);
   if (!customer) return null;
@@ -69,6 +73,32 @@ export function CustomerDetailPage() {
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.productId.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handlePrint = (content: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Detay</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${content}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -184,7 +214,11 @@ export function CustomerDetailPage() {
                 </thead>
                 <tbody>
                   {customerTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b border-gray-200 dark:border-gray-700">
+                    <tr 
+                      key={transaction.id} 
+                      onClick={() => setSelectedTransaction(transaction)}
+                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                    >
                       <td className="p-4">
                         {new Date(transaction.date).toLocaleDateString('tr-TR')}
                       </td>
@@ -214,7 +248,8 @@ export function CustomerDetailPage() {
               .map((order) => (
                 <div
                   key={order.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+                  onClick={() => setSelectedOrder(order)}
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -290,6 +325,30 @@ export function CustomerDetailPage() {
           </>
         )}
       </div>
+
+      {/* Transaction Preview */}
+      {selectedTransaction && (
+        <TransactionPreview
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+          onPrint={() => {
+            const content = document.getElementById('transaction-content');
+            if (content) handlePrint(content.innerHTML);
+          }}
+        />
+      )}
+
+      {/* Order Preview */}
+      {selectedOrder && (
+        <OrderPreview
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onPrint={() => {
+            const content = document.getElementById('order-content');
+            if (content) handlePrint(content.innerHTML);
+          }}
+        />
+      )}
     </div>
   );
 }

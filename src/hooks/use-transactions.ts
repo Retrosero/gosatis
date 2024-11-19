@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type TransactionType = 'sale' | 'payment' | 'expense';
+export type TransactionType = 'sale' | 'payment' | 'expense' | 'return';
 
 export type Transaction = {
   id: string;
-  date: string; // Store as ISO string
+  date: string;
   type: TransactionType;
   description: string;
   customer: {
@@ -31,6 +31,7 @@ export type Transaction = {
 type TransactionsState = {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
+  deleteTransaction: (id: string) => void;
   getTransactionsByDate: (date: string) => Transaction[];
 };
 
@@ -44,8 +45,14 @@ export const useTransactions = create<TransactionsState>()(
           transactions: [...state.transactions, {
             ...transaction,
             id: `TRX${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-            date: new Date().toISOString(), // Store as ISO string
+            date: new Date().toISOString(),
           }],
+        }));
+      },
+
+      deleteTransaction: (id) => {
+        set((state) => ({
+          transactions: state.transactions.filter(t => t.id !== id)
         }));
       },
 

@@ -8,6 +8,14 @@ import { SalesPage } from '../pages/sales';
 import { PaymentsPage } from '../pages/payments';
 import { DailyReportPage } from '../pages/daily-report';
 import { SettingsPage } from '../pages/settings';
+import { ProductsPage } from '../pages/products';
+import { ApprovalsPage } from '../pages/approvals';
+import { ReturnsPage } from '../pages/returns';
+import { InventoryCountPage } from '../pages/inventory/count';
+import { InventoryListsPage } from '../pages/inventory/lists';
+import { CompletedInventoryPage } from '../pages/inventory/completed';
+import { OrdersPage } from '../pages/orders/index';
+import { OrderPreparationPage } from '../pages/orders/preparation';
 import { useAuth } from '../hooks/use-auth';
 
 export function AppRoutes() {
@@ -33,6 +41,14 @@ export function AppRoutes() {
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/daily-report" element={<DailyReportPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/approvals" element={<ApprovalsPage />} />
+        <Route path="/returns" element={<ReturnsPage />} />
+        <Route path="/inventory/count" element={<InventoryCountPage />} />
+        <Route path="/inventory/lists" element={<InventoryListsPage />} />
+        <Route path="/inventory/completed" element={<CompletedInventoryPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/preparation/:id" element={<OrderPreparationPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

@@ -21,6 +21,15 @@ export function DailyReportPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { transactions, getTransactionsByDate } = useTransactions();
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   const dailyTransactions = getTransactionsByDate(selectedDate)
     .filter(transaction => 
       selectedType === 'all' || transaction.type === selectedType
@@ -51,14 +60,24 @@ export function DailyReportPage() {
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+  const totals = dailyTransactions.reduce(
+    (acc, transaction) => {
+      const amount = transaction.amount;
+      switch (transaction.type) {
+        case 'sale':
+          acc.sales += amount;
+          break;
+        case 'payment':
+          acc.payments += amount;
+          break;
+        case 'expense':
+          acc.expenses += Math.abs(amount);
+          break;
+      }
+      return acc;
+    },
+    { sales: 0, payments: 0, expenses: 0 }
+  );
 
   const exportToExcel = () => {
     const data = dailyTransactions.map(t => ({
@@ -98,25 +117,6 @@ export function DailyReportPage() {
 
     doc.save(`hesap-hareketleri-${selectedDate}.pdf`);
   };
-
-  const totals = dailyTransactions.reduce(
-    (acc, transaction) => {
-      const amount = transaction.amount;
-      switch (transaction.type) {
-        case 'sale':
-          acc.sales += amount;
-          break;
-        case 'payment':
-          acc.payments += amount;
-          break;
-        case 'expense':
-          acc.expenses += Math.abs(amount);
-          break;
-      }
-      return acc;
-    },
-    { sales: 0, payments: 0, expenses: 0 }
-  );
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return null;
@@ -335,6 +335,34 @@ export function DailyReportPage() {
         <TransactionPreview
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
+          onPrint={() => {
+            const printContent = document.getElementById('transaction-content');
+            if (printContent) {
+              const printWindow = window.open('', '_blank');
+              if (printWindow) {
+                printWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>İşlem Detayı</title>
+                      <style>
+                        body { font-family: system-ui, -apple-system, sans-serif; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+                        @media print {
+                          .no-print { display: none; }
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      ${printContent.innerHTML}
+                    </body>
+                  </html>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+              }
+            }
+          }}
         />
       )}
     </div>

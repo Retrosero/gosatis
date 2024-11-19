@@ -1,41 +1,50 @@
 import { useState } from 'react';
 import { Search, Filter, Printer, Eye } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
-import { OrderPreview } from '../components/sales/order-preview';
-
-// This would typically come from your backend
-const orders = [
-  {
-    id: 'ORD001',
-    date: new Date('2024-01-15'),
-    customer: {
-      id: 'C001',
-      name: 'Ahmet Er Market',
-      taxNumber: '1234567890',
-      balance: 12500,
-      address: 'Atatürk Cad. No:123 İstanbul',
-      phone: '0212 345 67 89',
-    },
-    items: [
-      { productId: 'CIK-001', quantity: 5 },
-      { productId: 'BIS-001', quantity: 10 },
-    ],
-    discount: 10,
-    orderNote: 'Acil teslimat',
-    total: 1250.50,
-  },
-  // Add more sample orders...
-];
+import { OrderPreview } from '../components/orders/order-preview';
+import { useTransactions } from '../hooks/use-transactions';
 
 export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const { transactions } = useTransactions();
+
+  const orders = transactions.filter(t => t.type === 'sale');
 
   const filteredOrders = orders.filter(
     (order) =>
       order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handlePrint = (order: any) => {
+    const printContent = document.getElementById('order-content');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Sipariş Detayı</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   return (
     <div className="p-6">
@@ -73,27 +82,37 @@ export function OrdersPage() {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-200 dark:border-gray-700">
+                <tr 
+                  key={order.id} 
+                  onClick={() => setSelectedOrder(order)}
+                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                >
                   <td className="p-4">{order.id}</td>
-                  <td className="p-4">{order.date.toLocaleDateString('tr-TR')}</td>
+                  <td className="p-4">{new Date(order.date).toLocaleDateString('tr-TR')}</td>
                   <td className="p-4">
                     <div>
                       <p className="font-medium">{order.customer.name}</p>
                       <p className="text-sm text-gray-500">{order.customer.phone}</p>
                     </div>
                   </td>
-                  <td className="p-4 text-right">{formatCurrency(order.total)}</td>
+                  <td className="p-4 text-right">{formatCurrency(order.amount)}</td>
                   <td className="p-4">
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(order);
+                        }}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                         title="Görüntüle"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrint(order);
+                        }}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                         title="Yazdır"
                       >
@@ -110,11 +129,9 @@ export function OrdersPage() {
 
       {selectedOrder && (
         <OrderPreview
-          customer={selectedOrder.customer}
-          items={selectedOrder.items}
-          discount={selectedOrder.discount}
-          orderNote={selectedOrder.orderNote}
+          order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
+          onPrint={() => handlePrint(selectedOrder)}
         />
       )}
     </div>

@@ -17,56 +17,13 @@ type TransactionPreviewProps = {
     amount: number;
     items?: Array<{ name: string; quantity: number; price: number }>;
     paymentMethod?: string;
+    note?: string;
   };
   onClose: () => void;
+  onPrint: () => void;
 };
 
-export function TransactionPreview({ transaction, onClose }: TransactionPreviewProps) {
-  const handlePrint = () => {
-    const printContent = document.getElementById('transaction-content');
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${transaction.type === 'sale' ? 'Satış Faturası' : 
-                   transaction.type === 'payment' ? 'Tahsilat Makbuzu' : 
-                   'Tediye Makbuzu'}</title>
-          <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { font-weight: bold; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .text-sm { font-size: 0.875rem; }
-            .text-gray { color: #666; }
-            @media print {
-              body { padding: 0; margin: 0; }
-              button { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div>
-            ${printContent.innerHTML}
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            }
-          </script>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-  };
-
+export function TransactionPreview({ transaction, onClose, onPrint }: TransactionPreviewProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl">
@@ -78,7 +35,7 @@ export function TransactionPreview({ transaction, onClose }: TransactionPreviewP
           </h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
+              onClick={onPrint}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
               <Printer className="w-5 h-5" />
@@ -151,6 +108,13 @@ export function TransactionPreview({ transaction, onClose }: TransactionPreviewP
                   {formatCurrency(Math.abs(transaction.amount))}
                 </span>
               </div>
+            </div>
+          )}
+
+          {transaction.note && (
+            <div>
+              <h3 className="font-medium mb-2">Not</h3>
+              <p className="text-sm text-gray-500">{transaction.note}</p>
             </div>
           )}
         </div>
